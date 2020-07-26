@@ -1,2 +1,2 @@
 # vex-ramprice
-Record RAM price in Vexanium Blockchain
+Smart Contract to record RAM price in Vexanium Blockchain
