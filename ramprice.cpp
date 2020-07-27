@@ -60,7 +60,7 @@ class [[eosio::contract]] ramprice : public eosio::contract {
         
         [[eosio::action]]
         void getversion() {
-            print("RAMPrice Smart Contract v1.2 - 20200727");
+            print("RAMPrice Smart Contract v1.2 - 20200727\t");
             rammarket _rammarket = rammarket("vexcore"_n, "vexcore"_n.value);
 
             auto itr = _rammarket.find(ramcore_symbol.raw());
