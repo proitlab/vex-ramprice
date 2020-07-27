@@ -55,11 +55,9 @@ class [[eosio::contract]] ramprice : public eosio::contract {
 
         };
 
-        //using ramprices_index = eosio::multi_index<"ramprices"_n, pricetab>;
         typedef eosio::multi_index< "ramprices"_n, pricetab > ramprices;
 
-        //using contract::contract;
-
+        
         [[eosio::action]]
         void getversion() {
             print("RAMPrice Smart Contract v1.2 - 20200727");
