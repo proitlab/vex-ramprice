@@ -78,7 +78,7 @@ class [[eosio::contract]] ramprice : public eosio::contract {
 
         [[eosio::action]]
         void getversion() {
-            print("RAMPrice SC v1.3 - proitidgovex - 20200727\t");
+            print("RAMPrice SC v1.5 - proitidgovex - 20200803\t");
             rammarket _rammarket = rammarket("vexcore"_n, "vexcore"_n.value);
 
             auto itr = _rammarket.find(ramcore_symbol.raw());
@@ -91,85 +91,88 @@ class [[eosio::contract]] ramprice : public eosio::contract {
             print("Current Price:", current_ramprice, "\t");
         }
    
-        [[eosio::on_notify("vex.ram::transfer")]]
+        [[eosio::on_notify("vex.token::transfer")]]
         void insprice(name from, name to, eosio::asset quantity, std::string memo) {
     
             name trader;
             bool is_buy;
             uint64_t ram_amount;
 
-            rammarket _rammarket = rammarket("vexcore"_n, "vexcore"_n.value);
+            if ( ( from == "vex.ram"_n ) || ( to == "vex.ram"_n ) ) {
 
-            auto itr1 = _rammarket.find(ramcore_symbol.raw());
+                rammarket _rammarket = rammarket("vexcore"_n, "vexcore"_n.value);
 
-            float_t quote_balance = int64_t(itr1->quote.balance.amount) / 10000;
-            float_t current_ramprice = quote_balance / int64_t(itr1->base.balance.amount);
+                auto itr1 = _rammarket.find(ramcore_symbol.raw());
+
+                float_t quote_balance = int64_t(itr1->quote.balance.amount) / 10000;
+                float_t current_ramprice = quote_balance / int64_t(itr1->base.balance.amount);
 
 
-            uint32_t current_timestamp = now();
+                uint32_t current_timestamp = now();
 
-            ramprices _ramprices(get_self(), get_first_receiver().value);
+                ramprices _ramprices(get_self(), get_first_receiver().value);
 
-            auto itr2 = _ramprices.find( current_timestamp );
+                auto itr2 = _ramprices.find( current_timestamp );
 
-            if( itr2 == _ramprices.end() ) {
-                _ramprices.emplace( "vexcore"_n, [&](auto& row){
-                    row.price = current_ramprice;
-                    row.timestamp = current_timestamp;
-                });
-            }
+                if( itr2 == _ramprices.end() ) {
+                    _ramprices.emplace( "vexcore"_n, [&](auto& row){
+                        row.price = current_ramprice;
+                        row.timestamp = current_timestamp;
+                    });
+                }
 
-            if ( memo == "buy ram") {
-                trader = from;
-                is_buy = true;
-            } else {
-                trader = to;
-                is_buy = false;
-            }
+                if ( memo == "buy ram") {
+                    trader = from;
+                    is_buy = true;
+                } else {
+                    trader = to;
+                    is_buy = false;
+                }
 
-            ramtraders _ramtraders(get_self(), get_self().value);
+                ramtraders _ramtraders(get_self(), get_self().value);
 
-            auto itr3 = _ramtraders.find( trader.value );
+                auto itr3 = _ramtraders.find( trader.value );
 
-            if( itr3 == _ramtraders.end() ) {
+                if( itr3 == _ramtraders.end() ) {
 
-                /* trader is NOT in table ramtraders */
-                _ramtraders.emplace(trader, [&](auto& row) {
-                    row.account_name = trader;
-                    ram_amount = (uint64_t) (quantity.amount / current_ramprice);
-                    if( is_buy ) {
-                        row.buy_quantity = quantity;
-                        row.buy_counter++;
-                        row.ram_buy_quantity.amount = ram_amount;
-                        row.ram_buy_quantity.symbol = ram_symbol;
-                        
-                    } else {
-                        row.sell_quantity = quantity;
-                        row.sell_counter++;
-                        row.ram_sell_quantity.amount = ram_amount;
-                        row.ram_sell_quantity.symbol = ram_symbol;
-                    }
+                    /* trader is NOT in table ramtraders */
+                    _ramtraders.emplace(trader, [&](auto& row) {
+                        row.account_name = trader;
+                        ram_amount = (uint64_t) (quantity.amount / current_ramprice);
+                        if( is_buy ) {
+                            row.buy_quantity = quantity;
+                            row.buy_counter++;
+                            row.ram_buy_quantity.amount = ram_amount;
+                            row.ram_buy_quantity.symbol = ram_symbol;
+                            
+                        } else {
+                            row.sell_quantity = quantity;
+                            row.sell_counter++;
+                            row.ram_sell_quantity.amount = ram_amount;
+                            row.ram_sell_quantity.symbol = ram_symbol;
+                        }
 
-                });
- 
-            } else {
-                /* trader is in table ramtraders */
-                _ramtraders.modify( itr3, trader, [&](auto& row){
-                    row.account_name = trader;
-                    ram_amount = (uint64_t) (quantity.amount / current_ramprice);
-                    if( is_buy ) {
-                        row.buy_quantity += quantity;
-                        row.buy_counter++;
-                        row.ram_buy_quantity.amount += ram_amount;
-                        row.ram_buy_quantity.symbol = ram_symbol;
-                        
-                    } else {
-                        row.sell_quantity += quantity;
-                        row.sell_counter++;
-                        row.ram_sell_quantity.amount += ram_amount;
-                        row.ram_sell_quantity.symbol = ram_symbol;
-                    }
-                });
+                    });
+    
+                } else {
+                    /* trader is in table ramtraders */
+                    _ramtraders.modify( itr3, trader, [&](auto& row){
+                        row.account_name = trader;
+                        ram_amount = (uint64_t) (quantity.amount / current_ramprice);
+                        if( is_buy ) {
+                            row.buy_quantity += quantity;
+                            row.buy_counter++;
+                            row.ram_buy_quantity.amount += ram_amount;
+                            row.ram_buy_quantity.symbol = ram_symbol;
+                            
+                        } else {
+                            row.sell_quantity += quantity;
+                            row.sell_counter++;
+                            row.ram_sell_quantity.amount += ram_amount;
+                            row.ram_sell_quantity.symbol = ram_symbol;
+                        }
+                    });
+                }
             }
 
         };
